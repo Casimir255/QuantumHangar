@@ -2,6 +2,7 @@
 using NLog;
 using QuantumHangar.Serialization;
 using QuantumHangar.Utils;
+using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Character;
 using Sandbox.Game.World;
@@ -182,6 +183,10 @@ namespace QuantumHangar
 
             foreach (var singleGrid in grids)
             {
+                MaxPowerOutput += singleGrid.GetFatBlocks()
+                    .Where(b => b is not IMyBatteryBlock)
+                    .Sum(b => (b.BlockDefinition as MyPowerProducerDefinition)?.MaxPowerOutput ?? 0f);
+
                 if (singleGrid.GridSizeEnum == MyCubeSize.Large)
                 {
                     if (singleGrid.IsStatic)

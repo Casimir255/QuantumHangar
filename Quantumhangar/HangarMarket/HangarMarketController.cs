@@ -465,7 +465,7 @@ namespace QuantumHangar.HangarMarket
                 ("Mass", $"{newOffer.GridMass.ToString("N0", CultureInfo.InvariantCulture)}kg"),
                 ("Jump Distance", $"{newOffer.JumpDistance}m"),
                 ("Number Of Blocks", newOffer.NumberofBlocks.ToString("N0", CultureInfo.InvariantCulture)),
-                ("Power Output", $"{newOffer.MaxPowerOutput / 1000}kW"),
+                ("Power Output", $"{(newOffer.MaxPowerOutput * 1000).ToString("N0", CultureInfo.InvariantCulture)}kW"),
                 ("Built-Percent", $"{newOffer.GridBuiltPercent * 100:F2}%"),
                 ("Total Grids", newOffer.NumberOfGrids.ToString()),
                 ("Static Grids", newOffer.StaticGrids.ToString()),
