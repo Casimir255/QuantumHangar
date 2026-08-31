@@ -11,6 +11,7 @@ using Sandbox.Game.World;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -264,7 +265,6 @@ namespace QuantumHangar.HangarMarket
                 Log.Error($"request not valid");
                 return false;
             }
-               
 
 
             //Check if file exists
@@ -298,9 +298,9 @@ namespace QuantumHangar.HangarMarket
             {
                 Log.Error($"file doesnt exists so invalid");
             }
+
             RemoveMarketListing(owner, gridName);
             return false;
-
         }
 
         public static void SetGridPreview(long entityId, ulong owner, string gridName)
@@ -348,7 +348,6 @@ namespace QuantumHangar.HangarMarket
                 Log.Error($"Cant get steam id");
                 return;
             }
-       
 
 
             var buyerBalance = MyBankingSystem.GetBalance(buyerIdentity.Identity.IdentityId);
@@ -377,7 +376,8 @@ namespace QuantumHangar.HangarMarket
             }
             else
             {
-                ownerIdentity = MySession.Static.Players.GetAllIdentities().FirstOrDefault(x =>  owner == MySession.Static.Players.TryGetSteamId(x.IdentityId));
+                ownerIdentity = MySession.Static.Players.GetAllIdentities()
+                    .FirstOrDefault(x => owner == MySession.Static.Players.TryGetSteamId(x.IdentityId));
             }
 
             if (ownerIdentity == null)
@@ -451,49 +451,71 @@ namespace QuantumHangar.HangarMarket
         /* Following are for discord status messages */
         public static void NewGridOfferListed(MarketListing newOffer)
         {
-            if (!NexusSupport.RunningNexus)
+            if (!Config.SendListingsToWebhook)
                 return;
-
-
-            const string title = "Hangar Market - New Offer";
-
-
-            var msg = new StringBuilder();
-            msg.AppendLine($"GridName: {newOffer.Name}");
-            msg.AppendLine($"Price: {newOffer.Price}sc");
-            msg.AppendLine($"PCU: {newOffer.Pcu}");
-            msg.AppendLine($"Mass: {newOffer.GridMass}kg");
-            msg.AppendLine($"Jump Distance: {newOffer.JumpDistance}m");
-            msg.AppendLine($"Number Of Blocks: {newOffer.NumberofBlocks}");
-            msg.AppendLine($"PowerOutput: {newOffer.MaxPowerOutput / 1000}kW");
-            msg.AppendLine($"Built-Percent: {newOffer.GridBuiltPercent * 100}%");
-            msg.AppendLine($"Total Grids: {newOffer.NumberOfGrids}");
-            msg.AppendLine($"Static Grids: {newOffer.StaticGrids}");
-            msg.AppendLine($"Large Grids: {newOffer.LargeGrids}");
-            msg.AppendLine($"Small Grids: {newOffer.SmallGrids}");
-
-
-            msg.AppendLine();
-            msg.AppendLine($"Description: {newOffer.Description}");
 
             if (!MySession.Static.Players.TryGetPlayerBySteamId(newOffer.SteamId, out var player))
                 return;
 
+            const string title = "New Offer";
+
+            var rows = new (string Label, string Value)[]
+            {
+                ("PCU", newOffer.Pcu.ToString()),
+                ("Mass", $"{newOffer.GridMass.ToString("N0", CultureInfo.InvariantCulture)}kg"),
+                ("Jump Distance", $"{newOffer.JumpDistance}m"),
+                ("Number Of Blocks", newOffer.NumberofBlocks.ToString("N0", CultureInfo.InvariantCulture)),
+                ("Power Output", $"{newOffer.MaxPowerOutput / 1000}kW"),
+                ("Built-Percent", $"{newOffer.GridBuiltPercent * 100:F2}%"),
+                ("Total Grids", newOffer.NumberOfGrids.ToString()),
+                ("Static Grids", newOffer.StaticGrids.ToString()),
+                ("Large Grids", newOffer.LargeGrids.ToString()),
+                ("Small Grids", newOffer.SmallGrids.ToString()),
+            };
+            
+            const int minGap = 3;
+            const int minTotalWidth = 35;
+            int totalWidth = Math.Max(minTotalWidth, rows.Max(r => r.Label.Length + minGap + r.Value.Length));
+
+            var msg = new StringBuilder();
+            msg.AppendLine("```");
+            foreach (var (label, value) in rows)
+                msg.AppendLine($"{label}{value.PadLeft(totalWidth - label.Length)}");
+            msg.AppendLine("```");
+            
             var fac = MySession.Static.Factions.GetPlayerFaction(player.Identity.IdentityId);
+            var sellerName = fac != null ? $"[{fac.Tag}] {player.DisplayName}" : $"{player.DisplayName}";
 
-            var footer = fac != null ? $"Seller: [{fac.Tag}] {player.DisplayName}" : $"Seller: {player.DisplayName}";
+            var messagePayload = new
+            {
+                embeds = new[]
+                {
+                    new
+                    {
+                        color = 0xFFFF00,
+                        title,
+                        fields = new[]
+                        {
+                            new { name = "Name", value = newOffer.Name, inline = true },
+                            new { name = "Price", value = newOffer.Price.ToString("N0",CultureInfo.InvariantCulture), inline = true },
+                            new { name = "Description", value = newOffer.Description, inline = false },
+                            new { name = "Seller", value = sellerName, inline = false },
+                        },
+                        description = msg.ToString(),
+                        footer = string.IsNullOrEmpty(Config.WebhookMessageFooter) ? null : new { text = Config.WebhookMessageFooter }
+                    },
+                },
+            };
 
-
-            NexusApi.SendEmbedMessageToDiscord(Hangar.Config.MarketUpdateChannel, title, msg.ToString(), footer,
-                "#FFFF00");
+            WebhookHelper.SendMessage(JsonConvert.SerializeObject(messagePayload));
         }
 
         public static void GirdOfferRemoved(MarketListing newOffer)
         {
-            if (!NexusSupport.RunningNexus)
+            if (!Config.SendUnListingsToWebhook)
                 return;
 
-            const string title = "Hangar Market - Offer Removed";
+            const string title = "Offer Removed";
 
             MyIdentity ownerIdentity = null;
             if (MySession.Static.Players.TryGetPlayerBySteamId(newOffer.SteamId, out var ownerId))
@@ -502,7 +524,8 @@ namespace QuantumHangar.HangarMarket
             }
             else
             {
-                ownerIdentity = MySession.Static.Players.GetAllIdentities().FirstOrDefault(x => newOffer.SteamId == MySession.Static.Players.TryGetSteamId(x.IdentityId));
+                ownerIdentity = MySession.Static.Players.GetAllIdentities().FirstOrDefault(x =>
+                    newOffer.SteamId == MySession.Static.Players.TryGetSteamId(x.IdentityId));
             }
 
             if (ownerIdentity == null)
@@ -513,37 +536,49 @@ namespace QuantumHangar.HangarMarket
 
             var msg = new StringBuilder();
             msg.AppendLine($"Grid {newOffer.Name} is no longer for sale!");
-
-
             var fac = MySession.Static.Factions.GetPlayerFaction(ownerIdentity.IdentityId);
+            var sellerName = fac != null
+                ? $"[{fac.Tag}] {ownerIdentity.DisplayName}"
+                : $"{ownerIdentity.DisplayName}";
 
-            var footer = fac != null ? $"Seller: [{fac.Tag}] {ownerIdentity.DisplayName}" : $"Seller: {ownerIdentity.DisplayName}";
-
-
-            NexusApi.SendEmbedMessageToDiscord(Hangar.Config.MarketUpdateChannel, title, msg.ToString(), footer,
-                "#FFFF00");
+            var messagePayload = new
+            {
+                embeds = new[]
+                {
+                    new
+                    {
+                        title,
+                        description = msg.ToString(),
+                        color = 0xFFFF00,
+                        fields = new[]
+                        {
+                            new { name = "Seller", value = sellerName, inline = false },
+                        },
+                        footer = string.IsNullOrEmpty(Config.WebhookMessageFooter) ? null : new { text = Config.WebhookMessageFooter }
+                    }
+                }
+            };
+            
+            WebhookHelper.SendMessage(JsonConvert.SerializeObject(messagePayload));
         }
 
         public static void GridOfferBought(MarketListing newOffer, ulong buyer)
         {
-            if (!NexusSupport.RunningNexus)
+            if (!Config.SendSalesToWebhook)
                 return;
 
-            const string title = "Hangar Market - Offer Purchased";
-
+            const string title = "Offer Purchased";
 
             if (!MySession.Static.Players.TryGetPlayerBySteamId(newOffer.SteamId, out var seller))
                 return;
 
-
-            if (!MySession.Static.Players.TryGetPlayerBySteamId(newOffer.SteamId, out var buyerIdentity))
+            if (!MySession.Static.Players.TryGetPlayerBySteamId(buyer, out var buyerIdentity))
                 return;
-
 
             var fac = MySession.Static.Factions.GetPlayerFaction(seller.Identity.IdentityId);
             var buyerFac = MySession.Static.Factions.GetPlayerFaction(buyerIdentity.Identity.IdentityId);
 
-            var footer = fac != null ? $"Seller: [{fac.Tag}] {seller.DisplayName}" : $"Seller: {seller.DisplayName}";
+            var sellerName = fac != null ? $"[{fac.Tag}] {seller.DisplayName}" : $"{seller.DisplayName}";
 
 
             var msg = new StringBuilder();
@@ -553,8 +588,25 @@ namespace QuantumHangar.HangarMarket
                     : $"Grid {newOffer.Name} was purchased by {buyerIdentity.DisplayName} for {newOffer.Price}sc!");
 
 
-            NexusApi.SendEmbedMessageToDiscord(Hangar.Config.MarketUpdateChannel, title, msg.ToString(), footer,
-                "#FFFF00");
+            var messagePayload = new
+            {
+                embeds = new[]
+                {
+                    new
+                    {
+                        title,
+                        description = msg.ToString(),
+                        color = 0xFFFF00,
+                        fields = new[]
+                        {
+                            new { name = "Seller", value = sellerName, inline = false },
+                        },
+                        footer = string.IsNullOrEmpty(Config.WebhookMessageFooter) ? null : new { text = Config.WebhookMessageFooter }
+                    }
+                }
+            };
+            
+            WebhookHelper.SendMessage(JsonConvert.SerializeObject(messagePayload));
         }
     }
 }

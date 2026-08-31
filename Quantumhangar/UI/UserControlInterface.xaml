@@ -573,16 +573,25 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
-
-
-
+                                        
                                         <TextBlock Grid.Column="0" Grid.Row ="0" Text="Fee to remove/load grid thats already on the market: " Margin="3" Grid.ColumnSpan="2" ToolTip="Prevents spamming the market/loading a grid for sale"/>
                                         <TextBox Grid.Column="1" Grid.Row="0" Width="150" HorizontalAlignment="Left" Margin="3" Text="{Binding RestockAmount}" TextChanged="TextBox_TextChanged"/>
+                                        
+                                        <TextBlock Grid.Column="0" Grid.Row ="1" Text="Discord Market Webhook: " Margin="3" Grid.ColumnSpan="2" ToolTip="Displays buy/sell messages through discord"/>
+                                        <TextBox Grid.Column="1" Grid.Row="1" Width="150" HorizontalAlignment="Left" Margin="3" Text="{Binding DiscordWebhookUrl}" TextChanged="TextBox_TextChanged"/>
+                                        
+                                        <TextBlock Grid.Column="0" Grid.Row ="2" Text="Webhook message footer: " Margin="3" Grid.ColumnSpan="2" ToolTip="You can add a custom footer to your messages here"/>
+                                        <TextBox Grid.Column="1" Grid.Row="2" Width="150" HorizontalAlignment="Left" Margin="3" Text="{Binding WebhookMessageFooter}" TextChanged="TextBox_TextChanged"/>
 
-
-                                        <TextBlock Grid.Column="0" Grid.Row ="1" Text="Nexus Discord Market Channel: " Margin="3" Grid.ColumnSpan="2" ToolTip="Displays buy/sell messages through discord"/>
-                                        <TextBox Grid.Column="1" Grid.Row="1" Width="150" HorizontalAlignment="Left" Margin="3" Text="{Binding MarketUpdateChannel}" TextChanged="TextBox_TextChanged"/>
-
+                                        <TextBlock Grid.Column="0" Grid.Row ="3" Text="Send new listings to webhook: " Margin="3" Grid.ColumnSpan="2" ToolTip="Sends a message when a new ship is listed for sale"/>
+                                        <CheckBox Grid.Column="1" Grid.Row="3" VerticalAlignment="Center" Margin="3" IsChecked="{Binding SendListingsToWebhook}"/>
+                                        
+                                        <TextBlock Grid.Column="0" Grid.Row ="4" Text="Send delistings to webhook: " Margin="3" Grid.ColumnSpan="2" ToolTip="Sends a message when a new ship is delisted from sale"/>
+                                        <CheckBox Grid.Column="1" Grid.Row="4" VerticalAlignment="Center" Margin="3" IsChecked="{Binding SendUnListingsToWebhook}"/>
+                                        
+                                        <TextBlock Grid.Column="0" Grid.Row ="5" Text="Send sales to webhook: " Margin="3" Grid.ColumnSpan="2" ToolTip="Sends a message when a ship is sold"/>
+                                        <CheckBox Grid.Column="1" Grid.Row="5" VerticalAlignment="Center" Margin="3" IsChecked="{Binding SendSalesToWebhook}"/>
+                                        
                                     </Grid>
 
 

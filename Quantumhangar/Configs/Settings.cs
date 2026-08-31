@@ -222,10 +222,21 @@ namespace QuantumHangar
         public double RestockAmount { get => _restockAmount; set => SetValue(ref _restockAmount, value); }
 
 
-        private ulong _marketUpdateChannel;
-        public ulong MarketUpdateChannel { get => _marketUpdateChannel; set => SetValue(ref _marketUpdateChannel, value); }
+        private string _discordWebhookUrl = "";
+        public string DiscordWebhookUrl { get => _discordWebhookUrl; set => SetValue(ref _discordWebhookUrl, value); }
+        
+        private string _webhookMessageFooter = "";
+        public string WebhookMessageFooter { get => _webhookMessageFooter; set => SetValue(ref _webhookMessageFooter, value); }
 
-
+        private bool _sendListingsToWebhook;
+        public bool SendListingsToWebhook { get => _sendListingsToWebhook; set => SetValue(ref _sendListingsToWebhook, value); }
+        
+        private bool _sendUnListingsToWebhook;
+        public bool SendUnListingsToWebhook { get => _sendUnListingsToWebhook; set => SetValue(ref _sendUnListingsToWebhook, value); }
+        
+        private bool _sendSalesToWebhook;
+        public bool SendSalesToWebhook { get => _sendSalesToWebhook; set => SetValue(ref _sendSalesToWebhook, value); }
+        
         //private ObservableCollection<MarketListing> _PublicMarketOffers = new ObservableCollection<MarketListing>();
         //public ObservableCollection<MarketListing> PublicMarketOffers { get => _PublicMarketOffers; set => SetValue(ref _PublicMarketOffers, value); }
 
