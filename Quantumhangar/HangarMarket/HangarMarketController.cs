@@ -397,6 +397,8 @@ namespace QuantumHangar.HangarMarket
                 buyer);
             MyBankingSystem.ChangeBalance(buyerIdentity.IdentityId, -1 * offer.Price);
             MyBankingSystem.ChangeBalance(ownerIdentity.IdentityId, offer.Price);
+
+            GridOfferBought(offer, buyer);
         }
 
         private static void PurchaseServerGrid(MarketListing offer, ulong buyer, MyIdentity buyerIdentity)
